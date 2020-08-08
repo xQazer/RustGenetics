@@ -162,7 +162,7 @@ export default function Main() {
   return (
     <div className={styles.container}>
       <Head>
-        <title>Create Next App</title>
+        <title>Rust Genetics</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
