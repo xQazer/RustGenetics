@@ -209,3 +209,9 @@ export default function Main() {
     </div>
   )
 }
+
+export async function getStaticProps() {
+  return {
+    props: {}
+  }
+}
