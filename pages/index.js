@@ -111,34 +111,52 @@ export default function Main() {
 
   const getCrossBreeding = () => {
     if(targetGenetic.length != 6) return [];
+
+    let options = [];
+
     const len6 = Array(6).fill(1);
     const targetOutcome = countGenes(targetGenetic.split(''));
 
     const genticsGenes = gentics.map(g => g.split(''));
 
     for (let i = 0; i < gentics.length; i++) {
-      for (let x = i + 1; x < gentics.length; x++) {
-        for (let y = i + 1; y < gentics.length; y++) {
-          const currG = genticsGenes[i];
-          const xG = genticsGenes[x];
-          const yG = genticsGenes[y];
+      for (let x = i; x < gentics.length; x++) {
+        for (let y = x; y < gentics.length; y++) {
+          for (let z = y; z < gentics.length; z++) {
 
-          const outcome = len6.map((_, i) => evaluateGenesOutcome(currG[i], currG[i], xG[i], yG[i]));
+            const iG = genticsGenes[i];
+            const xG = genticsGenes[x];
+            const yG = genticsGenes[y];
+            const zG = genticsGenes[z];
 
-          console.log(i,x,y, outcome);
-          if(outcome.every(g => g.length == 1)) {
-            const outcomeCount = countGenes(outcome.map(arr => arr[0]));
-            console.log(outcomeCount, targetOutcome);
-            if(Object.entries(targetOutcome).every(([g, count]) => outcomeCount[g] === count)){
-              console.log('easy');
-              return [currG, currG, xG, yG]
+            const outcome = len6.map((_, i) => evaluateGenesOutcome(iG[i], xG[i], yG[i], zG[i]));
+
+            console.log(i, x, y, z, outcome);
+
+            const outcomeFlat = outcome.reduce((arr, a) => [...arr, ...a], []);
+            const outcomeCount = countGenes(outcomeFlat);
+            console.log(outcome, outcomeCount, targetOutcome);
+
+            if (Object.entries(targetOutcome).every(([g, count]) => outcomeCount[g] >= count)) {
+
+              const getCrossBreedingGentices = () => {
+                if(i == x && i == y && i == z) return [iG];
+                if(i == x && i == y) return [iG, zG];
+                if(i == x && y == z) return [iG, yG];
+                return [iG, xG, yG, zG];
+              }
+
+              const crossBreedingGentices = getCrossBreedingGentices();
+
+              if (outcome.every(a => a.length === 0)) return crossBreedingGentices;
+              options.push(crossBreedingGentices);
             }
           }
         }
       }
     }
 
-    return [];
+    return options;
   }
 
   return (
@@ -189,10 +207,15 @@ export default function Main() {
               <GeneticRow genetic={targetGenetic} />
             </div>
             <div>
-            <label className={styles.display_block}>CrossBreeding</label>
-              {getCrossBreeding().map((gentic, index) => (
-                <div key={index} className={styles.align_center}>
-                  <GeneticRow genetic={gentic.join('')} />
+            <label className={styles.display_block}>Cross breeding</label>
+              {getCrossBreeding().map((gentics, index) => (
+                <div key={gentics.join('')} className={styles.bottom_gutter}>
+                  {gentics.map((gentic, index) => (
+                    <div key={index} className={styles.align_center}>
+                      <GeneticRow genetic={gentic.join('')} />
+                    </div>
+                  ))
+                  }
                 </div>
               ))}
             </div>
