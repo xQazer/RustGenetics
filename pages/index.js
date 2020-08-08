@@ -1,7 +1,146 @@
 import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import styles from '../styles/main.module.css'
+import { GeneticRow } from '../components/GeneticRow';
 
-export default function Home() {
+// G Y H W X
+
+const redGenes = ['W', 'X'];
+const greenGenes = ['G', 'Y', 'H'];
+const allGenes = [...greenGenes, ...redGenes];
+
+export default function Main() {
+
+  const [geneticInput, setGeneticInput] = React.useState('');
+  const [targetGenetic, setTargetGenetic] = React.useState('');
+
+  const [gentics, setGentics] = React.useState([]);
+
+  const clearGentics = () => {
+    setGentics([]);
+  }
+
+  const onAddGenetic = (e) => {
+    e.preventDefault();
+
+    if(geneticInput.length != 6) return;
+
+    setGentics([...gentics, geneticInput]);
+    setGeneticInput('');
+  }
+
+  const validateGeneticInput = (e) => {
+    const chars = String(e.target.value).toUpperCase().split('');
+    if (chars.length > 6) return false;
+    if (!chars.every(c => allGenes.includes(c))) return false;
+    return true;
+  }
+
+  const onGeneticChange = (e) => {
+
+    if(!validateGeneticInput(e)) return;
+
+    setGeneticInput(e.target.value.toUpperCase());
+  }
+
+  const onTargetGeneticChange = (e) => {
+    if(!validateGeneticInput(e)) return;
+    setTargetGenetic(e.target.value.toUpperCase());
+  }
+
+  const removeGentic = (index) => () => {
+    setGentics(gentics.filter((v,i) => i !== index))
+  }
+
+  const countGenes = (gentics) => {
+    return gentics.reduce((obj, g) => {
+      return {
+        ...obj,
+        [g]: (obj[g] || 0) + 1
+      }
+    }, {})
+  }
+
+  const evaluateGenesOutcome = (...gentics) => {
+    const greenCount = gentics.reduce((obj, g) => {
+      if (!greenGenes.includes(g)) return obj;
+      return {
+        ...obj,
+        [g]: (obj[g] || 0) + 1
+      }
+    }, {})
+
+    const redCount = gentics.reduce((obj, g) => {
+      if (!redGenes.includes(g)) return obj;
+      return {
+        ...obj,
+        [g]: (obj[g] || 0) + 1
+      }
+    }, {});
+
+    const maxRedCount = Math.max(Object.values(redCount));
+    const maxGreencount = Math.max(Object.values(greenCount));
+
+    if(maxGreencount <= maxRedCount) {
+      return Object.entries(redCount).reduce((result, [g, count]) => {
+        if(count < result.count) return result;
+        if(count == result.count) return {
+          ...result,
+          genes: [...result.genes, g]
+        }
+
+        return {
+          count,
+          genes: [g]
+        }
+      }, {count: 0, genes: []}).genes;
+    }
+
+    return Object.entries(greenCount).reduce((result, [g, count]) => {
+      if(count < result.count) return result;
+      if(count == result.count) return {
+        ...result,
+        genes: [...result.genes, g]
+      }
+
+      return {
+        count,
+        genes: [g]
+      }
+    }, {count: 0, genes: []}).genes;
+  }
+
+  const getCrossBreeding = () => {
+    if(targetGenetic.length != 6) return [];
+    const len6 = Array(6).fill(1);
+    const targetOutcome = countGenes(targetGenetic.split(''));
+
+    const genticsGenes = gentics.map(g => g.split(''));
+
+    for (let i = 0; i < gentics.length; i++) {
+      for (let x = i + 1; x < gentics.length; x++) {
+        for (let y = i + 1; y < gentics.length; y++) {
+          const currG = genticsGenes[i];
+          const xG = genticsGenes[x];
+          const yG = genticsGenes[y];
+
+          const outcome = len6.map((_, i) => evaluateGenesOutcome(currG[i], currG[i], xG[i], yG[i]));
+
+          console.log(i,x,y, outcome);
+          if(outcome.every(g => g.length == 1)) {
+            const outcomeCount = countGenes(outcome.map(arr => arr[0]));
+            console.log(outcomeCount, targetOutcome);
+            if(Object.entries(targetOutcome).every(([g, count]) => outcomeCount[g] === count)){
+              console.log('easy');
+              return [currG, currG, xG, yG]
+            }
+          }
+        }
+      }
+    }
+
+    return [];
+  }
+
   return (
     <div className={styles.container}>
       <Head>
@@ -10,55 +149,62 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
+
         <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
+          Rust Genetics
         </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <div className={styles.flex}>
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+          <div className={styles.column}>
+            <div className={styles.bottom_gutter}>
+              <form onSubmit={onAddGenetic}>
+                <label className={styles.display_block}>Add genetic</label>
+                <input
+                  value={geneticInput}
+                  onChange={onGeneticChange}
+                />
+              </form>
+              <GeneticRow genetic={geneticInput} />
+            </div>
+            <div>
+              <label className={styles.display_block}>Genetics archive</label>
+              {gentics.map((gentic, index) => (
+                <div key={index} className={styles.align_center}>
+                  <GeneticRow genetic={gentic} />
+                  <span className={styles.remove_icon} onClick={removeGentic(index)}>X</span>
+                </div>
+              ))}
+              {gentics.length > 0 && <a className={styles.action_a} onClick={clearGentics}>Clear all</a>}
+            </div>
+          </div>
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+          <div className={styles.column}>
+            <div className={styles.bottom_gutter}>
+              <label className={styles.display_block}>Target genetic</label>
+              <input
+                value={targetGenetic}
+                onChange={onTargetGeneticChange}
+                />
+              <GeneticRow genetic={targetGenetic} />
+            </div>
+            <div>
+            <label className={styles.display_block}>CrossBreeding</label>
+              {getCrossBreeding().map((gentic, index) => (
+                <div key={index} className={styles.align_center}>
+                  <GeneticRow genetic={gentic.join('')} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+
+
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
+        Powered by Qazer
       </footer>
     </div>
   )
